@@ -9,8 +9,6 @@ import (
 	"os"
 )
 
-const charSheetFile string = "Data/Kanji_20250717_140306.xml"
-
 type Character struct {
 	CharId      int    `xml:"id"`
 	CharStroke  int    `xml:"Strokes"`
@@ -19,7 +17,6 @@ type Character struct {
 	ReadingJoyo string `xml:"Reading_within_Joyo"`
 	MeaningOn   string `xml:"Translation_of_On"`
 	MeaningKun  string `xml:"Translation_of_Kun"`
-	Viewed      bool
 }
 
 type Characters struct {
@@ -32,7 +29,7 @@ var randListInt []int
 
 func LoadCharactersFromSheet(charSheet string) error {
 	if charSheet == "" {
-		charSheet = charSheetFile
+		return errors.New("Path to character sheet is invalid")
 	}
 	xmlFile, err := os.Open(charSheet)
 	if err != nil {
@@ -45,18 +42,13 @@ func LoadCharactersFromSheet(charSheet string) error {
 
 	xml.Unmarshal(byteValue, &characters)
 
-	// fmt.Printf("\n----PRINTING CONTENTS----\n")
-	// for i := 0; i < 10; i++ {
-	// 	fmt.Printf("%s\tid: %d, strokes: %d\n", characters.CharList[i].Char, characters.CharList[i].CharId, characters.CharList[i].CharStroke)
-	// }
-
 	// Initializing
 	var length int = len(characters.CharList)
 	if length <= 0 {
 		return errors.New("Character list is empty")
 	}
 
-	// filling a list of int with
+	// Filling a list of int with
 	for i := 0; i < length; i++ {
 		randListInt = append(randListInt, i)
 	}
@@ -66,9 +58,18 @@ func LoadCharactersFromSheet(charSheet string) error {
 }
 
 func PickCharacter() (Character, error) {
+	// returning a blank Character if the list is empty
+	if len(randListInt) <= 0 {
+		fmt.Println("Character list is empty!")
+		return Character{}, nil
+	}
+	// Getting a random index
 	r := rand.Intn(len(randListInt))
+	// Getting the value at the index
+	x := randListInt[r]
+	// Cutting it from the list
+	randListInt = append(randListInt[:r], randListInt[r+1:]...)
 
-	//TODO: pick a character at random using r, remove it from the list to shorten it
-	// need a infinite loop in main waiting for an input of the user or that 24h has elapsed
-	return characters.CharList[r], nil
+	// Returning the character at the random index
+	return characters.CharList[x], nil
 }
