@@ -2,6 +2,7 @@ package main
 
 import (
 	"dailyKanji/character"
+	"dailyKanji/display"
 	"flag"
 	"fmt"
 	"time"
@@ -25,10 +26,24 @@ const DATA_DEFAULT string = "Data/Kanji_20250717_140306.xml"
 //  -display-strokes display number of strokes for now (animation of strokes later)
 //  -data="PATH" change the input file for the Kanji data
 
-func displayCharacter(char character.Character) error {
-	fmt.Printf("Kanji picked: %s\n", char.Char)
-	// TODO: display with GUI
-	return nil
+func manageTicker(tickerDay *time.Ticker, Done chan<- bool) {
+	for {
+		// tickerDay.C fires at tick defined on construction of tickerDay and returns Time
+		t := <-tickerDay.C
+		// Picking a new character
+		char, err := character.PickCharacter()
+		// Checking if it is the last character
+		if char == (character.Character{}) {
+			Done <- true
+			return
+		}
+		if err != nil {
+			fmt.Println(err)
+			return
+		}
+		fmt.Println("Picked new character at: ", t)
+		display.DisplayCharacter(char)
+	}
 }
 
 func main() {
@@ -59,7 +74,7 @@ func main() {
 		fmt.Println(err)
 		return
 	}
-	displayCharacter(char)
+	display.DisplayCharacter(char)
 
 	// Parsing the value of timePtr "15:04" corresponds to hours and minutes
 	targetTime, errTParse := time.Parse("15:04", *timePtr)
@@ -82,32 +97,12 @@ func main() {
 	}
 
 	/* 	tickerDay := time.NewTicker(24 * time.Hour) */
-	tickerDay := time.NewTicker(1 * time.Second)
+	tickerDay := time.NewTicker(time.Second / 10)
 	// Making channel to send a signal when all the characters have been cycled through
 	Done := make(chan bool)
 
 	// Main loop goroutine anonymous function
-	go func() {
-		for {
-			select {
-			// tickerDay.C fires at tick defined on construction of tickerDay and returns Time
-			case t := <-tickerDay.C:
-				// Picking a new character
-				char, err = character.PickCharacter()
-				// Checking if it is the last character
-				if char == (character.Character{}) {
-					Done <- true
-					return
-				}
-				if err != nil {
-					fmt.Println(err)
-					return
-				}
-				fmt.Println("Picked new character at: ", t)
-				displayCharacter(char)
-			}
-		}
-	}()
+	go manageTicker(tickerDay, Done)
 	<-Done
 	tickerDay.Stop()
 	fmt.Println("Ticker stopped at: ", time.Since(startTime))
