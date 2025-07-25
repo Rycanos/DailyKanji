@@ -29,7 +29,7 @@ const DATA_DEFAULT string = "Data/Kanji_20250717_140306.xml"
 func manageTicker(tickerDay *time.Ticker, Done chan<- bool) {
 	for {
 		// tickerDay.C fires at tick defined on construction of tickerDay and returns Time
-		t := <-tickerDay.C
+		<-tickerDay.C
 		// Picking a new character
 		char, err := character.PickCharacter()
 		// Checking if it is the last character
@@ -41,9 +41,29 @@ func manageTicker(tickerDay *time.Ticker, Done chan<- bool) {
 			fmt.Println(err)
 			return
 		}
-		fmt.Println("Picked new character at: ", t)
 		display.DisplayCharacter(char)
 	}
+}
+
+func calculateTicker(startTime time.Time, targetTime time.Time) (ticker *time.Ticker) {
+	// Check the amount of time between start and the next programmed display at timePtr
+	/* 	startTimeNextDay := time.Date(startTime.Year(), startTime.Month(), startTime.Day(), targetTime.Hour(),
+	targetTime.Minute(), 0, 0, startTime.Location()) */
+	// Uncomment for debug purposes
+	startTimeNextDay := time.Date(startTime.Year(), startTime.Month(), startTime.Day(), startTime.Hour(),
+		startTime.Minute(), startTime.Second()+5, 0, startTime.Location())
+
+	/* 	startTimeNextDay = startTimeNextDay.AddDate(0, 0, 1) */
+	diff := startTimeNextDay.UnixNano() - startTime.UnixNano()
+
+	fmt.Println("time.Duration(diff): ", time.Duration(diff))
+	// Wait until next display
+	time.Sleep(time.Duration(diff))
+
+	// Sets the display of characters to be every 24 hours
+	/* 	return time.NewTicker(24 * time.Hour) */
+	// Uncomment for debug purposes
+	return time.NewTicker(time.Second / 100)
 }
 
 func main() {
@@ -66,7 +86,9 @@ func main() {
 	fmt.Println("------------------")
 
 	// Loading data set
-	character.LoadCharactersFromSheet(*dataPathPtr)
+	if character.LoadCharactersFromSheet(*dataPathPtr, *jlptPtr) != nil {
+		return
+	}
 
 	// Picking and displaying the first character
 	char, err := character.PickCharacter()
@@ -83,27 +105,16 @@ func main() {
 		return
 	}
 
-	//TODO Cleanup
-	if false {
-		fmt.Println("In if false")
-		// Check the amount of time between start and the next programmed display at timePtr
-		startTimeNextDay := time.Date(startTime.Year(), startTime.Month(), startTime.Day(), targetTime.Hour(), targetTime.Minute(), 0, 0, startTime.Location())
-		startTimeNextDay = startTimeNextDay.AddDate(0, 0, 1)
-		diff := startTimeNextDay.UnixMilli() - startTime.UnixMilli()
+	// Calculating the time for next display and returning the ticker
+	// TODO: custom ticker interval (as parameter?)
+	tickerDay := calculateTicker(startTime, targetTime)
 
-		fmt.Println(diff)
-		// Wait until next display
-		//		time.Sleep(diff)
-	}
-
-	/* 	tickerDay := time.NewTicker(24 * time.Hour) */
-	tickerDay := time.NewTicker(time.Second / 10)
 	// Making channel to send a signal when all the characters have been cycled through
 	Done := make(chan bool)
 
-	// Main loop goroutine anonymous function
+	// Main loop goroutine call, displays a character at each tick
 	go manageTicker(tickerDay, Done)
 	<-Done
 	tickerDay.Stop()
-	fmt.Println("Ticker stopped at: ", time.Since(startTime))
+	fmt.Println("The program exited after: ", time.Since(startTime))
 }

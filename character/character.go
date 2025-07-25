@@ -27,33 +27,46 @@ type Characters struct {
 var characters Characters
 var randListInt []int
 
-func LoadCharactersFromSheet(charSheet string) error {
+func filterOutChars(filterJlpt int) {
+	var temp Characters
+	for i := range len(characters.CharList) {
+		if characters.CharList[i].JlptLvl >= filterJlpt {
+			/* 			fmt.Printf("Kanji filtered: %s   jlpt: %d   id: %d\n", characters.CharList[i].Char, characters.CharList[i].JlptLvl, characters.CharList[i].CharId) */
+			temp.CharList = append(temp.CharList, characters.CharList[i])
+		}
+	}
+	if len(temp.CharList) > 0 {
+		characters.CharList = temp.CharList
+	}
+}
+
+func LoadCharactersFromSheet(charSheet string, filterJlpt int) error {
 	if charSheet == "" {
-		return errors.New("Path to character sheet is invalid")
+		return errors.New("path to character sheet is invalid")
 	}
 	xmlFile, err := os.Open(charSheet)
 	if err != nil {
 		fmt.Println(err)
 	}
-
-	fmt.Printf("Successfully opened \"%s\"\n", charSheet)
+	defer xmlFile.Close()
 
 	byteValue, _ := io.ReadAll(xmlFile)
 
 	xml.Unmarshal(byteValue, &characters)
 
+	filterOutChars(filterJlpt)
+
 	// Initializing
 	var length int = len(characters.CharList)
 	if length <= 0 {
-		return errors.New("Character list is empty")
+		return errors.New("character list is empty")
 	}
 
-	// Filling a list of int with
+	// Filling a list of int with its index
 	for i := 0; i < length; i++ {
 		randListInt = append(randListInt, i)
 	}
 
-	defer xmlFile.Close()
 	return nil
 }
 
