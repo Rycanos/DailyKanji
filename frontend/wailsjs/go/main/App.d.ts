@@ -3,5 +3,3 @@
 import {character} from '../models';
 
 export function DisplayCharacter(arg1:character.Character):Promise<void>;
-
-export function Greet(arg1:string):Promise<string>;

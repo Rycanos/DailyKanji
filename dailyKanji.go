@@ -67,6 +67,13 @@ func (a *App) startup(ctx context.Context) {
 		return
 	}
 
+	// Parsing the value of timePtr "15:04" corresponds to hours and minutes
+	targetTime, errTParse := time.Parse("15:04", *timePtr)
+	if errTParse != nil {
+		fmt.Println(errTParse)
+		return
+	}
+
 	// Picking and displaying the first character
 	char, err := character.PickCharacter()
 	if err != nil {
@@ -74,13 +81,6 @@ func (a *App) startup(ctx context.Context) {
 		return
 	}
 	a.DisplayCharacter(char)
-
-	// Parsing the value of timePtr "15:04" corresponds to hours and minutes
-	targetTime, errTParse := time.Parse("15:04", *timePtr)
-	if errTParse != nil {
-		fmt.Println(errTParse)
-		return
-	}
 
 	// Calculating the time for next display and returning the ticker
 	// TODO: custom ticker interval (as parameter?)
@@ -94,13 +94,6 @@ func (a *App) startup(ctx context.Context) {
 
 	<-Done
 	tickerDay.Stop()
-	fmt.Println("The program exited after: ", time.Since(startTime))
-
-}
-
-// Greet returns a greeting for the given name
-func (a *App) Greet(name string) string {
-	return fmt.Sprintf("Hello %s, It's show time!", name)
 }
 
 // TODO: Character picker for frontend button
@@ -146,19 +139,20 @@ func (a *App) manageTicker(tickerDay *time.Ticker, Done chan<- bool) {
 			fmt.Println(err)
 			return
 		}
+		fmt.Println("New character picked at: ", time.Now())
 		a.DisplayCharacter(char)
 	}
 }
 
 func calculateTicker(startTime time.Time, targetTime time.Time) (ticker *time.Ticker) {
 	// Check the amount of time between start and the next programmed display at timePtr
-	/* 	startTimeNextDay := time.Date(startTime.Year(), startTime.Month(), startTime.Day(), targetTime.Hour(),
-	targetTime.Minute(), 0, 0, startTime.Location()) */
+	startTimeNextDay := time.Date(startTime.Year(), startTime.Month(), startTime.Day(), targetTime.Hour(),
+		targetTime.Minute(), 0, 0, startTime.Location())
 	// Uncomment for debug purposes
-	startTimeNextDay := time.Date(startTime.Year(), startTime.Month(), startTime.Day(), startTime.Hour(),
-		startTime.Minute(), startTime.Second()+5, 0, startTime.Location())
-
-	/* 	startTimeNextDay = startTimeNextDay.AddDate(0, 0, 1) */
+	/* 	startTimeNextDay := time.Date(startTime.Year(), startTime.Month(), startTime.Day(), startTime.Hour(),
+	startTime.Minute(), startTime.Second()+5, 0, startTime.Location())
+	*/
+	startTimeNextDay = startTimeNextDay.AddDate(0, 0, 1)
 	diff := startTimeNextDay.UnixNano() - startTime.UnixNano()
 
 	fmt.Println("time.Duration(diff): ", time.Duration(diff))
@@ -166,9 +160,7 @@ func calculateTicker(startTime time.Time, targetTime time.Time) (ticker *time.Ti
 	time.Sleep(time.Duration(diff))
 
 	// Sets the display of characters to be every 24 hours
-	/* 	return time.NewTicker(24 * time.Hour) */
-	// Uncomment for debug purposes
-	return time.NewTicker(time.Second / 100)
+	return time.NewTicker(time.Hour * 24)
 }
 
 func main() {

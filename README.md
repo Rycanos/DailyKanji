@@ -1,11 +1,9 @@
-# README
+# DailyKanji
 
 ## About
 
-This is the official Wails React-TS template.
-
-You can configure the project by editing `wails.json`. More information about the project settings can be found
-here: https://wails.io/docs/reference/project-config
+This program displays a random Kanji each day from a set list in xml.
+you can run it on an old computer, a raspberry pi or a phone to get daily exposure to new Kanjis to help you learn them!
 
 ## Live Development
 

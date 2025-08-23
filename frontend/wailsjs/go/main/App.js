@@ -5,7 +5,3 @@
 export function DisplayCharacter(arg1) {
   return window['go']['main']['App']['DisplayCharacter'](arg1);
 }
-
-export function Greet(arg1) {
-  return window['go']['main']['App']['Greet'](arg1);
-}
